@@ -66,8 +66,8 @@ A comprehensive web-based platform connecting Catering Service Providers (Admins
 
 <img width="944" height="422" alt="image" src="https://github.com/user-attachments/assets/f0335e5f-4de6-4261-b2bf-a5bea179a16f" />
 <img width="947" height="440" alt="image" src="https://github.com/user-attachments/assets/01a7df40-f4db-459e-8887-778d4d24b002" />
-
-customer side
+<img width="950" height="440" alt="image" src="https://github.com/user-attachments/assets/5e810bd7-1d2a-41d1-8d57-e9e584623bf9" />
+##Customer Side
 <img width="953" height="435" alt="image" src="https://github.com/user-attachments/assets/8a91d1db-7588-441c-84a9-8e3662259295" />
 <img width="944" height="415" alt="image" src="https://github.com/user-attachments/assets/8dcd9fd6-017f-406b-abab-3e58c395e95a" />
 <img width="927" height="462" alt="image" src="https://github.com/user-attachments/assets/a41cbd24-d2d5-4ed6-b0ff-a7b480894d63" />
