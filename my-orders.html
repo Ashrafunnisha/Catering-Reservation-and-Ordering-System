@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Catering Hub</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">Catering Hub</div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item">Menu</a>
+                <a href="cart.html" class="nav-item">Cart</a>
+                <a href="#" class="nav-item active">My Orders</a>
+                <a href="#" id="logoutBtn" class="nav-item" style="color: var(--error-color);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 2rem 0;">
+        <h2>Order History</h2>
+
+        <div id="loading" style="margin-top: 1rem;">Loading history...</div>
+        <div id="ordersList" style="margin-top: 1rem;"></div>
+
+        <div id="emptyState" style="text-align: center; padding: 4rem; display: none;">
+            <p>You haven't placed any orders yet.</p>
+        </div>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/db.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            Auth.checkAuth('user');
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) logoutBtn.addEventListener('click', Auth.logout);
+
+            const ordersList = document.getElementById('ordersList');
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('emptyState');
+
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (user) {
+                    try {
+                        // Check if we have a specific helper for user orders or use raw query
+                        // Let's add getOrdersForUser to DB or just do it here. 
+                        // It's cleaner to keep DB logic in DB.js but for speed/simplicity inline is OK if single use.
+                        // I'll stick to good practice and add it to DB.js if I haven't, or just inline.
+                        // DB.js didn't have user logic specifically but I can add it or just raw call.
+
+                        const snapshot = await firebase.firestore().collection('orders')
+                            .where('userId', '==', user.uid)
+                            .get();
+
+                        loading.style.display = 'none';
+
+                        if (snapshot.empty) {
+                            emptyState.style.display = 'block';
+                        } else {
+                            const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                            orders.forEach(order => {
+                                const card = document.createElement('div');
+                                card.className = 'card';
+                                card.style.marginBottom = '1rem';
+
+                                const date = new Date(order.createdAt).toLocaleDateString();
+                                const total = formatCurrency(order.totalAmount);
+
+                                let itemsHtml = '<ul style="margin: 0.5rem 0 0.5rem 1.5rem;">';
+                                order.items.forEach(item => {
+                                    itemsHtml += `<li>${item.quantity}x ${item.name}</li>`;
+                                });
+                                itemsHtml += '</ul>';
+
+                                card.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                                        <strong>Order #${order.id.slice(0, 8)}</strong>
+                                        <span class="${order.status === 'PENDING' ? 'text-secondary' : 'text-success'}">${order.status}</span>
+                                    </div>
+                                    <p class="text-secondary" style="font-size: 0.9rem;">Placed on: ${date}</p>
+                                    <div style="margin: 1rem 0;">
+                                        ${itemsHtml}
+                                    </div>
+                                    <div style="text-align: right; font-weight: bold; color: var(--primary-color);">
+                                        Total: ${total}
+                                    </div>
+                                `;
+                                ordersList.appendChild(card);
+                            });
+                        }
+
+                    } catch (error) {
+                        loading.textContent = "Error loading history: " + error.message;
+                        Logger.error('Order history load failed', error);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

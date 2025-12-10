@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasina Foods - Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">Hasina Foods</div>
+            <div class="nav-links">
+                <a href="#" class="nav-item active">Products</a>
+                <a href="orders.html" class="nav-item">Orders</a>
+                <a href="#" id="logoutBtn" class="nav-item" style="color: var(--error-color);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 2rem 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 id="welcomeMsg">Your Menu</h2>
+            <a href="add-product.html" class="btn btn-primary">+ Add New Item</a>
+        </div>
+
+        <div id="loading" style="text-align: center; padding: 2rem;">Loading products...</div>
+
+        <div id="productsGrid" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+            <!-- Products will be injected here -->
+        </div>
+
+        <div id="emptyState" style="text-align: center; padding: 4rem; display: none;">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">You haven't added any products yet.</p>
+            <a href="add-product.html" class="btn btn-secondary">Start Selling</a>
+        </div>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/db.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            Auth.checkAuth('admin');
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.addEventListener('click', Auth.logout);
+
+            const productsGrid = document.getElementById('productsGrid');
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('emptyState');
+            const welcomeMsg = document.getElementById('welcomeMsg');
+
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (user) {
+                    try {
+                        const products = await DB.getAdminProducts(user.uid);
+                        loading.style.display = 'none';
+
+                        if (products.length === 0) {
+                            emptyState.style.display = 'block';
+                        } else {
+                            products.forEach(product => {
+                                const card = document.createElement('div');
+                                card.className = 'card';
+                                card.innerHTML = `
+                                    <div style="height: 180px; background-color: #eee; border-radius: 4px; margin-bottom: 1rem; overflow: hidden;">
+                                        <img src="${product.imageUrl || 'https://via.placeholder.com/300?text=No+Image'}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                    <h3>${product.name}</h3>
+                                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">${product.category || 'General'}</p>
+                                    <p style="font-weight: bold; color: var(--primary-color); font-size: 1.2rem;">${formatCurrency(product.price)}</p>
+                                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                        <button class="btn btn-secondary" onclick="deleteProduct('${product.id}')" style="padding: 0.5rem; font-size: 0.9rem; width: 100%;">Delete</button>
+                                    </div>
+                                `;
+                                productsGrid.appendChild(card);
+                            });
+                        }
+                    } catch (error) {
+                        loading.textContent = "Error loading products: " + error.message;
+                        Logger.error('Dashboard load failed', error);
+                    }
+                }
+            });
+
+            // Global delete function
+            window.deleteProduct = async (id) => {
+                if (confirm('Are you sure you want to delete this item?')) {
+                    try {
+                        await DB.deleteProduct(id);
+                        window.location.reload();
+                    } catch (e) {
+                        alert('Failed to delete: ' + e.message);
+                    }
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>

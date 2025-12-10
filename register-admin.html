@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner Registration - Catering Hub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <div class="flex-center" style="min-height: 100vh; padding: 2rem;">
+        <div class="card" style="width: 100%; max-width: 600px;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="color: var(--primary-color);">Partner Registration</h2>
+                <p style="color: var(--text-secondary);">Start selling your catering services</p>
+            </div>
+
+            <div id="alertMessage" class="alert"></div>
+
+            <form id="registerForm">
+                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Owner Name</label>
+                        <input type="text" id="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessName" class="form-label">Business Name</label>
+                        <input type="text" id="businessName" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">About Your Service</label>
+                    <textarea id="description" class="form-control" rows="3"
+                        placeholder="Tell us about your catering specialties..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" class="form-label">Phone Number</label>
+                    <input type="tel" id="phone" class="form-control" required>
+                </div>
+
+                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" id="password" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" id="confirmPassword" class="form-control" required minlength="6">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Register Business</button>
+                </div>
+            </form>
+
+            <div style="text-align: center; margin-top: 1rem;">
+                <p>Already have an account? <a href="index.html">Log In</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+
+            const form = document.getElementById('registerForm');
+            const alertBox = document.getElementById('alertMessage');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('name').value;
+                const businessName = document.getElementById('businessName').value;
+                const description = document.getElementById('description').value;
+                const email = document.getElementById('email').value;
+                const phone = document.getElementById('phone').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (password !== confirmPassword) {
+                    alertBox.textContent = "Passwords do not match!";
+                    alertBox.className = "alert alert-error";
+                    alertBox.style.display = "block";
+                    return;
+                }
+
+                alertBox.style.display = "none";
+
+                try {
+                    await Auth.register(email, password, 'admin', {
+                        ownerName: name,
+                        businessName: businessName,
+                        description: description,
+                        phone: phone
+                    });
+
+                    alert('Partner registration successful! Please log in.');
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    alertBox.textContent = error.message;
+                    alertBox.className = "alert alert-error";
+                    alertBox.style.display = "block";
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

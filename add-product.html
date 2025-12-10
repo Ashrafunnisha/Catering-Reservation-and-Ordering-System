@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Product - Catering Hub</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">Hasina Foods</div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item">Products</a>
+                <a href="#" class="nav-item">Orders</a>
+                <a href="#" id="logoutBtn" class="nav-item" style="color: var(--error-color);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container flex-center" style="min-height: 80vh;">
+        <div class="card" style="width: 100%; max-width: 600px;">
+            <div style="margin-bottom: 2rem;">
+                <a href="dashboard.html" style="color: var(--text-secondary);">&larr; Back to Dashboard</a>
+                <h2 style="color: var(--primary-color); margin-top: 1rem;">Add New Item</h2>
+            </div>
+
+            <form id="addProductForm">
+                <div class="form-group">
+                    <label for="productName" class="form-label">Item Name</label>
+                    <input type="text" id="productName" class="form-control" required
+                        placeholder="e.g., Chicken Biryani">
+                </div>
+
+                <div class="form-group">
+                    <label for="price" class="form-label">Price (INR)</label>
+                    <input type="number" id="price" class="form-control" required placeholder="0.00" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="category" class="form-label">Category</label>
+                    <select id="category" class="form-control">
+                        <option value="Starters">Starters</option>
+                        <option value="Main Course">Main Course</option>
+                        <option value="Desserts">Desserts</option>
+                        <option value="Bevareges">Beverages</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" class="form-control" rows="3"
+                        placeholder="Ingredients, taste, etc."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="imageUrl" class="form-label">Image URL</label>
+                    <input type="url" id="imageUrl" class="form-control" placeholder="https://example.com/image.jpg">
+                    <small style="color: var(--text-secondary);">For this version, please provide a direct image
+                        link.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Item</button>
+
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/db.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            Auth.checkAuth('admin');
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) logoutBtn.addEventListener('click', Auth.logout);
+
+            const form = document.getElementById('addProductForm');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    alert('You must be logged in.');
+                    return;
+                }
+
+                const productData = {
+                    adminId: user.uid,
+                    name: document.getElementById('productName').value,
+                    price: document.getElementById('price').value,
+                    category: document.getElementById('category').value,
+                    description: document.getElementById('description').value,
+                    imageUrl: document.getElementById('imageUrl').value
+                };
+
+                try {
+                    await DB.addProduct(productData);
+                    alert('Product added successfully!');
+                    window.location.href = 'dashboard.html';
+                } catch (error) {
+                    alert('Error adding product: ' + error.message);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

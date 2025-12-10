@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cart - Catering Hub</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="nav-brand">Catering Hub</div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item">Menu</a>
+                <a href="#" class="nav-item active">Cart</a>
+                <a href="my-orders.html" class="nav-item">My Orders</a>
+                <a href="#" id="logoutBtn" class="nav-item" style="color: var(--error-color);">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 2rem 0;">
+        <h2>Your Cart</h2>
+
+        <div id="cartContainer" style="margin-top: 1rem;">
+            <!-- Cart items here -->
+        </div>
+
+        <div id="emptyCart" style="text-align: center; padding: 4rem; display: none;">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">Your cart is empty.</p>
+            <a href="dashboard.html" class="btn btn-primary">Browse Menu</a>
+        </div>
+    </div>
+
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/db.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            Auth.checkAuth('user');
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) logoutBtn.addEventListener('click', Auth.logout);
+
+            const cartContainer = document.getElementById('cartContainer');
+            const emptyCart = document.getElementById('emptyCart');
+
+            function renderCart() {
+                const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+                if (cart.length === 0) {
+                    cartContainer.innerHTML = '';
+                    emptyCart.style.display = 'block';
+                    return;
+                }
+                emptyCart.style.display = 'none';
+
+                let total = 0;
+                let html = '<div class="card">';
+
+                cart.forEach((item, index) => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 1rem 0;">
+                            <div>
+                                <h4>${item.name}</h4>
+                                <p class="text-secondary">${formatCurrency(item.price)} x ${item.quantity}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-weight: bold;">${formatCurrency(itemTotal)}</p>
+                                <button class="btn btn-secondary" onclick="removeItem(${index})" style="font-size: 0.8rem; padding: 0.2rem 0.5rem; margin-top: 0.5rem;">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div style="margin-top: 1.5rem; text-align: right;">
+                        <h3>Total: ${formatCurrency(total)}</h3>
+                        <button id="checkoutBtn" class="btn btn-primary" style="margin-top: 1rem; width: 200px;">Place Order</button>
+                    </div>
+                </div>`;
+
+                cartContainer.innerHTML = html;
+
+                document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
+            }
+
+            window.removeItem = (index) => {
+                let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+                cart.splice(index, 1);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                renderCart();
+            };
+
+            async function handleCheckout() {
+                const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+                if (cart.length === 0) return;
+
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    alert('Please log in to place an order.');
+                    return;
+                }
+
+                // Verify same seller
+                const sellerId = cart[0].adminId;
+                const isSingleSeller = cart.every(item => item.adminId === sellerId);
+                if (!isSingleSeller) {
+                    alert('Items from multiple caterers found. Please clear cart and order from one at a time.');
+                    return;
+                }
+
+                if (!confirm('Confirm order placement?')) return;
+
+                try {
+                    // Fetch user details for the order (e.g. name, address)
+                    // We could store this in localStorage or fetch from Firestore again
+                    // For MVP we assume we fetch it or just use auth name if available?
+                    // Let's fetch profile.
+                    const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+
+                    // Fallback if profile doesn't exist (e.g. legacy user or registration error)
+                    const userData = userDoc.exists ? userDoc.data() : { name: user.email, address: '' };
+
+                    const orderData = {
+                        userId: user.uid,
+                        customerName: userData.name || user.email,
+                        address: userData.address || "No address provided",
+                        sellerId: sellerId,
+                        items: cart,
+                        totalAmount: cart.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+                    };
+
+                    await DB.createOrder(orderData);
+
+                    localStorage.removeItem('cart');
+                    alert('Order placed successfully!');
+                    window.location.href = 'my-orders.html';
+
+                } catch (error) {
+                    alert('Order failed: ' + error.message);
+                }
+            }
+
+            renderCart();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catering Solutions - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+
+    <div class="flex-center"
+        style="min-height: 100vh; background: linear-gradient(135deg, var(--background-color) 0%, #fff3e0 100%);">
+        <div class="card" style="width: 100%; max-width: 400px;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h1 style="color: var(--primary-color);">Catering Hub</h1>
+                <p style="color: var(--text-secondary);">Taste the tradition</p>
+            </div>
+
+            <div id="alertMessage" class="alert"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" class="form-control" required placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" required
+                        placeholder="Enter your password">
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Log In</button>
+                </div>
+            </form>
+
+            <div style="text-align: center; margin-top: 1rem;">
+                <p class="text-secondary">Don't have an account?</p>
+                <div style="margin-top: 0.5rem; display: flex; gap: 1rem; justify-content: center;">
+                    <a href="#" id="showRegisterUser">Register as User</a>
+                    <span style="color: #ddd;">|</span>
+                    <a href="#" id="showRegisterAdmin">Register as Admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            Logger.info('Application started on Login page');
+
+            // Optional: Check if already logged in
+            // Auth.checkAuth(); 
+
+            const loginForm = document.getElementById('loginForm');
+            const alertBox = document.getElementById('alertMessage');
+
+            function showAlert(msg, type) {
+                alertBox.textContent = msg;
+                alertBox.className = `alert alert-${type}`;
+                alertBox.style.display = 'block';
+            }
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    const result = await Auth.login(email, password);
+                    alert('Login successful! Click OK to continue.');
+
+                    if (result.role === 'admin') {
+                        window.location.href = 'admin/dashboard.html';
+                    } else {
+                        window.location.href = 'user/dashboard.html';
+                    }
+
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                }
+            });
+
+            document.getElementById('showRegisterUser').addEventListener('click', (e) => {
+                // e.preventDefault(); // Let the standard link work
+                window.location.href = 'register-user.html';
+            });
+
+            document.getElementById('showRegisterAdmin').addEventListener('click', (e) => {
+                // e.preventDefault();
+                window.location.href = 'register-admin.html';
+            });
+        });
+    </script>
+</body>
+
+</html>
